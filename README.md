@@ -45,6 +45,10 @@ npm start
 
 ## API Endpoints
 
+### URL
+
+https://laravel-blog-node-js-api.onrender.com
+
 ### Posts
 
 | Method | Endpoint | Description |
