@@ -14,6 +14,9 @@ module.exports = (postController) => {
   
   // GET a single post
   router.get('/:id', postController.getPostById);
+
+  // GET a single post by slug
+  router.get('/slug/:slug', postController.getPostBySlug);
   
   // POST a new post
   router.post('/', uploaders.posts.single('image'), postController.createPost);

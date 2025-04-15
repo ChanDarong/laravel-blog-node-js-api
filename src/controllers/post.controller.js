@@ -20,16 +20,35 @@ class PostController {
       if (req.query.isFeatured == 1) {
         filter.isFeatured = true;
       }
+
+      // Define projection for fields we want (only include these fields)
+      const projection = {
+        title: 1,
+        slug: 1,
+        excerpt: 1,
+        image: 1,
+        createdAt: 1,
+        category: 1,
+        author: 1,
+        readTime: 1
+        // Not including content to reduce payload size
+      };
       
       // Create query
-      let query = Post.find(filter);
+      let query = Post.find(filter, projection);
       
       // Add population if requested
       if (shouldPopulateCategory) {
-        query = query.populate('category');
+        query = query.populate({
+          path: 'category',
+          select: 'name slug'
+        });
       }
       if (shouldPopulateAuthor) {
-        query = query.populate('author');
+        query = query.populate({
+          path: 'author',
+          select: 'name avatar'
+        });
       }
       
       // Add sorting (newest first)
@@ -65,6 +84,44 @@ class PostController {
         return res.status(404).json({ message: 'Post not found' });
       }
       
+      res.json(post);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  // Get a single post by slug
+  async getPostBySlug(req, res) {
+    try {
+      // Define projection for fields we want
+      const projection = {
+        title: 1,
+        slug: 1,
+        excerpt: 1,
+        image: 1,
+        createdAt: 1,
+        category: 1,
+        author: 1,
+        content: 1,
+        tags: 1,
+        readTime: 1
+      };
+
+      // Create and execute query with chaining
+      const post = await Post.findOne({ slug: req.params.slug }, projection)
+        .populate({
+          path: 'category',
+          select: 'name slug'
+        })
+        .populate({
+          path: 'author',
+          select: 'name avatar'
+        }); // Use lean() for better performance
+
+      if (!post) {
+        return res.status(404).json({ message: 'Post not found' });
+      }
+
       res.json(post);
     } catch (error) {
       res.status(500).json({ message: error.message });
