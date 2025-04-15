@@ -5,14 +5,18 @@ class PostController {
   async getAllPosts(req, res) {
     try {
       // Check if we should populate categories
-      const shouldPopulate = req.query.withCategory === 'true';
+      const shouldPopulateCategory = req.query.withCategory === 'true';
+      const shouldPopulateAuthor = req.query.withAuthor === 'true';
       
       // Create query
       let query = Post.find();
       
       // Add population if requested
-      if (shouldPopulate) {
+      if (shouldPopulateCategory) {
         query = query.populate('category');
+      }
+      if (shouldPopulateAuthor) {
+        query = query.populate('author');
       }
       
       // Add sorting (newest first)
@@ -59,18 +63,26 @@ class PostController {
     try {
       const post = new Post({
         title: req.body.title,
+        excerpt: req.body.excerpt,
         content: req.body.content,
         author: req.body.author,
-        categories: req.body.categories || [],
+        category: req.body.category,
+        readTime: req.body.readTime,
         tags: req.body.tags || [],
-        featuredImage: req.body.featuredImage,
         published: req.body.published !== undefined ? req.body.published : true
       });
+
+      // Handle image image if present
+      if (req.file) {
+        post.image = req.file.path || `/public/uploads/posts/${req.file.filename}`;
+      } else if (req.body.image) {
+        post.image = req.body.image;
+      }
 
       const savedPost = await post.save();
       res.status(201).json(savedPost);
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   }
 

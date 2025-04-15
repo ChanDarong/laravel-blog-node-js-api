@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const uploaders = require('../middleware/upload')
 
 module.exports = (postController) => {
   // GET all posts
@@ -15,7 +16,7 @@ module.exports = (postController) => {
   router.get('/:id', postController.getPostById);
   
   // POST a new post
-  router.post('/', postController.createPost);
+  router.post('/', uploaders.posts.single('image'), postController.createPost);
   
   // PUT update a post
   router.put('/:id', postController.updatePost);

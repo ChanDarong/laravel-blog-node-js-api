@@ -22,11 +22,24 @@ const categorySchema = new Schema({
 });
 
 // Pre-save hook to generate slug from name
-categorySchema.pre('save', function(next) {
+categorySchema.pre('save', function (next) {
   if (this.isModified('name')) {
     this.slug = this.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   }
   next();
+});
+
+// Transform method _id to id
+categorySchema.set('toJSON', {
+  virtuals: true,
+  transform: function (doc, ret, options) {
+    // Don't modify id format
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+
+    return ret;
+  }
 });
 
 const Category = mongoose.model('Category', categorySchema);

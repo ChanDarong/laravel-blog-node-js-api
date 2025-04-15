@@ -9,10 +9,20 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files correctly
+app.use('/public/uploads', express.static('public/uploads'));
+
 // Connect to database and set up routes
 async function initializeApp() {
   try {
     await connectDB();
+    
+    // Set up global baseUrl for model transforms
+    app.use((req, res, next) => {
+      // Set global base URL from the current request
+      global.baseUrl = `${req.protocol}://${req.get('host')}`;
+      next();
+    });
     
     // Import and register routes
     const routes = require('./src/routes')();
