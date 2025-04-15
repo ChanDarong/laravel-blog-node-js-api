@@ -41,6 +41,10 @@ const postSchema = new Schema({
     readTime: {
         type: String
     },
+    isFeatured: {
+        type: Boolean,
+        default: false
+    },
     tags: [String]
 }, {
     timestamps: true, // Adds createdAt and updatedAt fields

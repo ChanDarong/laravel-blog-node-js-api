@@ -15,6 +15,11 @@ class PostController {
       if (req.query.category) {
         filter.category = req.query.category;
       }
+
+      // Check if isFeatured
+      if (req.query.isFeatured == 1) {
+        filter.isFeatured = true;
+      }
       
       // Create query
       let query = Post.find(filter);
