@@ -7,9 +7,17 @@ class PostController {
       // Check if we should populate categories
       const shouldPopulateCategory = req.query.withCategory === 'true';
       const shouldPopulateAuthor = req.query.withAuthor === 'true';
+
+      // Build filter conditions
+      const filter = {};
+
+      // Check if category filter is provided
+      if (req.query.category) {
+        filter.category = req.query.category;
+      }
       
       // Create query
-      let query = Post.find();
+      let query = Post.find(filter);
       
       // Add population if requested
       if (shouldPopulateCategory) {
