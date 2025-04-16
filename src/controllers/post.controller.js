@@ -1,4 +1,6 @@
 const Post = require('../models/post');
+const fs = require('fs');
+const path = require('path');
 
 class PostController {
   // Get all posts
@@ -159,17 +161,42 @@ class PostController {
   // Update a post
   async updatePost(req, res) {
     try {
-      const post = await Post.findByIdAndUpdate(
+      // Find the existing post
+      const existingPost = await Post.findById(req.params.id);
+
+      if (!existingPost) {
+        return res.status(404).json({ message: 'Post not found' });
+      }
+
+      const updateData = { ...req.body };
+      // Handle image if it's being updated
+      if (req.file) {
+        // Set the new image path
+        updateData.image = `public/uploads/posts/${req.file.filename}`;
+
+        // Delete old image if it exists and isn't a URL
+        if (existingPost.image && 
+          !existingPost.image.startsWith('http') && 
+          fs.existsSync(existingPost.image)) {
+          try {
+            fs.unlinkSync(path.resolve(existingPost.image));
+            console.log(`Deleted old image: ${existingPost.image}`);
+          } catch (err) {
+            console.error(`Failed to delete old image: ${err.message}`);
+            // Continue execution even if file deletion fails
+          }
+        }
+
+      }
+
+      // Update the post
+      const updatedPost = await Post.findByIdAndUpdate(
         req.params.id,
-        req.body,
+        updateData,
         { new: true, runValidators: true }
       );
       
-      if (!post) {
-        return res.status(404).json({ message: 'Post not found' });
-      }
-      
-      res.json(post);
+      res.json(updatedPost);
     } catch (error) {
       res.status(400).json({ message: error.message });
     }

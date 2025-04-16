@@ -22,7 +22,7 @@ module.exports = (postController) => {
   router.post('/', uploaders.posts.single('image'), postController.createPost);
   
   // PUT update a post
-  router.put('/:id', postController.updatePost);
+  router.put('/:id', uploaders.posts.single('image'), postController.updatePost);
   
   // DELETE a post
   router.delete('/:id', postController.deletePost);
