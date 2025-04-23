@@ -19,8 +19,9 @@ async function initializeApp() {
     
     // Set up global baseUrl for model transforms
     app.use((req, res, next) => {
-      // Set global base URL from the current request
-      global.baseUrl = `${req.protocol}://${req.get('host')}`;
+      // Force HTTPS for production environment
+      const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
+      global.baseUrl = `${protocol}://${req.get('host')}`;
       next();
     });
     
