@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 require('dotenv').config();
 const { connectDB } = require('./src/config/db.config');
 
@@ -7,6 +8,7 @@ const port = process.env.PORT || 3000;
 
 // Middleware for parsing JSON and urlencoded form data
 app.use(express.json());
+app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files correctly
