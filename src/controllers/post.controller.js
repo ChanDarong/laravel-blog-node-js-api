@@ -1,6 +1,7 @@
 const Post = require('../models/post');
 const fs = require('fs');
 const path = require('path');
+const { uploadToBlob } = require('../utils/blobStorage');
 
 class PostController {
   // Get all posts
@@ -144,9 +145,35 @@ class PostController {
         published: req.body.published !== undefined ? req.body.published : true
       });
 
-      // Handle image image if present
+      // Handle image if present
       if (req.file) {
-        post.image = req.file.path || `/public/uploads/posts/${req.file.filename}`;
+        try {
+          if (process.env.VERCEL === '1') {
+            // Use Vercel Blob storage in production/Vercel environment
+            const result = await uploadToBlob(
+              req.file.buffer,
+              req.file.originalname,
+              'posts'
+            );
+            post.image = result.url;
+          } else {
+            // In local development, save to disk
+            const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(req.file.originalname)}`;
+            const filepath = `public/uploads/posts/${filename}`;
+            
+            // Ensure the directory exists
+            if (!fs.existsSync('public/uploads/posts')) {
+              fs.mkdirSync('public/uploads/posts', { recursive: true });
+            }
+            
+            // Write the file
+            fs.writeFileSync(filepath, req.file.buffer);
+            post.image = filepath;
+          }
+        } catch (error) {
+          console.error('File upload error:', error);
+          return res.status(500).json({ message: 'Error uploading file' });
+        }
       } else if (req.body.image) {
         post.image = req.body.image;
       }
@@ -169,24 +196,50 @@ class PostController {
       }
 
       const updateData = { ...req.body };
+      
       // Handle image if it's being updated
       if (req.file) {
-        // Set the new image path
-        updateData.image = `public/uploads/posts/${req.file.filename}`;
-
-        // Delete old image if it exists and isn't a URL
-        if (existingPost.image && 
-          !existingPost.image.startsWith('http') && 
-          fs.existsSync(existingPost.image)) {
-          try {
-            fs.unlinkSync(path.resolve(existingPost.image));
-            console.log(`Deleted old image: ${existingPost.image}`);
-          } catch (err) {
-            console.error(`Failed to delete old image: ${err.message}`);
-            // Continue execution even if file deletion fails
+        try {
+          if (process.env.VERCEL === '1') {
+            // Use Vercel Blob storage in production/Vercel environment
+            const result = await uploadToBlob(
+              req.file.buffer,
+              req.file.originalname,
+              'posts'
+            );
+            updateData.image = result.url;
+          } else {
+            // In local development, save to disk
+            const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(req.file.originalname)}`;
+            const filepath = `public/uploads/posts/${filename}`;
+            
+            // Ensure the directory exists
+            if (!fs.existsSync('public/uploads/posts')) {
+              fs.mkdirSync('public/uploads/posts', { recursive: true });
+            }
+            
+            // Write the file
+            fs.writeFileSync(filepath, req.file.buffer);
+            updateData.image = filepath;
+            
+            // Delete old image if it exists and isn't a URL and isn't a blob URL
+            if (existingPost.image && 
+                !existingPost.image.startsWith('http') && 
+                !existingPost.image.includes('vercel-blob.com') &&
+                fs.existsSync(existingPost.image)) {
+              try {
+                fs.unlinkSync(path.resolve(existingPost.image));
+                console.log(`Deleted old image: ${existingPost.image}`);
+              } catch (err) {
+                console.error(`Failed to delete old image: ${err.message}`);
+                // Continue execution even if file deletion fails
+              }
+            }
           }
+        } catch (error) {
+          console.error('File upload error:', error);
+          return res.status(500).json({ message: 'Error uploading file' });
         }
-
       }
 
       // Update the post

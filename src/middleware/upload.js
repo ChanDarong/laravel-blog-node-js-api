@@ -8,24 +8,21 @@ const fs = require('fs');
  * @returns {object} Multer middleware
  */
 const createUploader = (entityType) => {
-  // Create entity-specific uploads directory
-  const uploadDir = `public/uploads/${entityType}`;
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-
-  // Configure storage
-  const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-      // Create unique filename with original extension
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const ext = path.extname(file.originalname);
-      cb(null, `${uniqueSuffix}${ext}`);
+  // Always use memory storage for Vercel environments and blob storage
+  // This will store files in memory instead of on disk
+  const storage = multer.memoryStorage();
+  
+  // If we're not in Vercel, we'll create the directories for local development
+  if (process.env.VERCEL !== '1') {
+    const uploadDir = `public/uploads/${entityType}`;
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+    } catch (error) {
+      console.error(`Error creating upload directory: ${error.message}`);
     }
-  });
+  }
 
   // File filter to only allow image files
   const fileFilter = (req, file, cb) => {

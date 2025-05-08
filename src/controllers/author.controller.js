@@ -1,4 +1,7 @@
 const Author = require('../models/author');
+const path = require('path');
+const fs = require('fs');
+const { uploadToBlob } = require('../utils/blobStorage');
 
 class AuthorController {
     // Get all authors
@@ -20,6 +23,7 @@ class AuthorController {
                     message: "Author not found"
                 });
             }
+            res.json(author);
         } catch (error) {
             res.status(500).json({
                 message: error.message
@@ -41,9 +45,33 @@ class AuthorController {
 
             // Handle avatar image if present
             if (req.file) {
-                // If using multer, the file information will be in req.file
-                // Store the path or URL to the uploaded file
-                author.avatar = req.file.path || `/public/uploads/authors/${req.file.filename}`;
+                try {
+                    if (process.env.VERCEL === '1') {
+                        // Use Vercel Blob storage in production/Vercel environment
+                        const result = await uploadToBlob(
+                            req.file.buffer,
+                            req.file.originalname,
+                            'authors'
+                        );
+                        author.avatar = result.url;
+                    } else {
+                        // In local development, save to disk
+                        const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(req.file.originalname)}`;
+                        const filepath = `public/uploads/authors/${filename}`;
+                        
+                        // Ensure the directory exists
+                        if (!fs.existsSync('public/uploads/authors')) {
+                            fs.mkdirSync('public/uploads/authors', { recursive: true });
+                        }
+                        
+                        // Write the file
+                        fs.writeFileSync(filepath, req.file.buffer);
+                        author.avatar = filepath;
+                    }
+                } catch (error) {
+                    console.error('File upload error:', error);
+                    return res.status(500).json({ message: 'Error uploading file' });
+                }
             } else if (req.body.avatar) {
                 // If you're passing a URL directly through the request body
                 author.avatar = req.body.avatar;

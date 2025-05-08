@@ -26,7 +26,7 @@ const authorSchema = new Schema({
 // Add a virtual for the full avatar URL
 authorSchema.virtual('avatarUrl').get(function() {
     if (this.avatar && !this.avatar.startsWith('http')) {
-        const baseUrl = global.baseUrl || 'http://localhost:3000';
+        const baseUrl = global.fileUrl || 'http://localhost:3000';
         const avatarPath = this.avatar.startsWith('/') ? this.avatar : `/${this.avatar}`;
         return `${baseUrl}${avatarPath}`; // We'll transform this in the toJSON method
     }

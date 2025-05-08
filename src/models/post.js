@@ -63,7 +63,7 @@ postSchema.pre('save', function (next) {
 // Add a virtual for the full image URL
 postSchema.virtual('imageUrl').get(function () {
     if (this.image && !this.image.startsWith('http')) {
-        const baseUrl = global.baseUrl || 'http://localhost:3000';
+        const baseUrl = global.fileUrl || 'http://localhost:3000';
         const imagePath = this.image.startsWith('/') ? this.image : `/${this.image}`;
         return `${baseUrl}${imagePath}`; // We'll transform this in the toJSON method
     }
