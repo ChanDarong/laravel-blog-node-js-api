@@ -3,7 +3,12 @@ const bcrypt = require('bcrypt');
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
-    name: {
+    firstName: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    lastName: {
         type: String,
         required: true,
         trim: true
@@ -55,8 +60,14 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
     }
 }
 
+// Virtual for full name
+userSchema.virtual('name').get(function() {
+    return `${this.firstName} ${this.lastName}`;
+});
+
 // Transform method for JSON
 userSchema.set('toJSON', {
+    virtuals: true, // Include virtuals when converting to JSON
     transform: function(doc, ret, options) {
         ret.id = ret._id;
         delete ret._id;
