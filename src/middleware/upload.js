@@ -4,7 +4,7 @@ const fs = require('fs');
 
 /**
  * Creates a multer upload middleware for a specific entity type
- * @param {string} entityType - The entity type (e.g., 'authors', 'posts')
+ * @param {string} entityType - The entity type (e.g., 'authors', 'posts', 'avatars')
  * @returns {object} Multer middleware
  */
 const createUploader = (entityType) => {
@@ -46,7 +46,8 @@ const createUploader = (entityType) => {
 // Create specific uploaders for different entity types
 const uploaders = {
   authors: createUploader('authors'),
-  posts: createUploader('posts')
+  posts: createUploader('posts'),
+  avatars: createUploader('avatars')
 };
 
 module.exports = uploaders;

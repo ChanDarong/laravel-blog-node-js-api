@@ -29,6 +29,9 @@ const userSchema = new Schema({
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
+    },
+    avatar: {
+        type: String
     }
 }, {
     timestamps: true
@@ -49,6 +52,16 @@ userSchema.pre('save', async function(next) {
     } catch (error) {
         next(error);
     }
+});
+
+// Add a virtual for the full avatar URL
+userSchema.virtual('avatarUrl').get(function () {
+    if (this.avatar && !this.avatar.startsWith('http')) {
+        const baseUrl = global.fileUrl || 'http://localhost:3000';
+        const avatarPath = this.avatar.startsWith('/') ? this.avatar : `/${this.avatar}`;
+        return `${baseUrl}${avatarPath}`; // We'll transform this in the toJSON method
+    }
+    return this.avatar;
 });
 
 // Method to compare passwords

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { auth } = require('../middleware/auth');
+const uploaders = require('../middleware/upload')
 
 module.exports = (authController) => {
   // Register a new user
@@ -16,7 +17,7 @@ module.exports = (authController) => {
   router.get('/profile', auth, authController.getProfile);
   
   // Update user's profile (protected route)
-  router.put('/profile', auth, authController.updateProfile);
+  router.put('/profile', [auth, uploaders.avatars.single('avatar')], authController.updateProfile);
   
   return router;
 };

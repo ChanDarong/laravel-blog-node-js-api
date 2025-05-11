@@ -1,6 +1,9 @@
 const User = require('../../models/user');
 const BlacklistedToken = require('../../models/blacklistedToken');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
+const { uploadToBlob } = require('../../utils/blobStorage');
 
 class AuthController {
     // Register a new user
@@ -93,7 +96,9 @@ class AuthController {
                     lastName: user.lastName,
                     name: user.name,
                     email: user.email,
-                    role: user.role
+                    role: user.role,
+                    avatar: user.avatar,
+                    avatarUrl: user.avatarUrl
                 },
                 token: token
             });
@@ -129,6 +134,39 @@ class AuthController {
             if (lastName) updates.lastName = lastName;
             if (email) updates.email = email;
             if (role) updates.role = role;
+
+            // Handle avatar if present
+            if (req.file) {
+                try {
+                    if (process.env.VERCEL === '1') {
+                        // Use Vercel Blob storage in production/Vercel environment
+                        const result = await uploadToBlob(
+                            req.file.buffer,
+                            req.file.originalname,
+                            'avatars'
+                        );
+                        updates.avatar = result.url;
+                    } else {
+                        // In local development, save to disk
+                        const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(req.file.originalname)}`;
+                        const filepath = `public/uploads/avatars/${filename}`;
+                        
+                        // Ensure the directory exists
+                        if (!fs.existsSync('public/uploads/avatars')) {
+                            fs.mkdirSync('public/uploads/avatars', { recursive: true });
+                        }
+                        
+                        // Write the file
+                        fs.writeFileSync(filepath, req.file.buffer);
+                        updates.avatar = filepath;
+                    }
+                } catch (error) {
+                    console.error('File upload error:', error);
+                    return res.status(500).json({ message: 'Error uploading avatar' });
+                }
+            } else if (req.body.avatar) {
+                updates.avatar = req.body.avatar;
+            }
     
             // Update password if provided
             if (req.body.password) {
@@ -154,7 +192,8 @@ class AuthController {
                         lastName: user.lastName,
                         name: user.name,
                         email: user.email,
-                        role: user.role
+                        role: user.role,
+                        avatar: user.avatar
                     }
                 });
             }
